@@ -1,23 +1,19 @@
-if vim.loader and vim.fn.has "nvim-0.9.1" == 1 then vim.loader.enable() end
+-- This file simply bootstraps the installation of Lazy.nvim and then calls other files for execution
+-- This file doesn't necessarily need to be touched, BE CAUTIOUS editing this file and proceed at your own risk.
+local lazypath = vim.env.LAZY or vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
+if not (vim.env.LAZY or (vim.uv or vim.loop).fs_stat(lazypath)) then
+  -- stylua: ignore
+  vim.fn.system({ "git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath })
+end
+vim.opt.rtp:prepend(lazypath)
 
-for _, source in ipairs {
-  "astronvim.bootstrap",
-  "astronvim.options",
-  "astronvim.lazy",
-  "astronvim.autocmds",
-  "astronvim.mappings",
-} do
-  local status_ok, fault = pcall(require, source)
-  if not status_ok then vim.api.nvim_err_writeln("Failed to load " .. source .. "\n\n" .. fault) end
+-- validate that lazy is available
+if not pcall(require, "lazy") then
+  -- stylua: ignore
+  vim.api.nvim_echo({ { ("Unable to load lazy from: %s\n"):format(lazypath), "ErrorMsg" }, { "Press any key to exit...", "MoreMsg" } }, true, {})
+  vim.fn.getchar()
+  vim.cmd.quit()
 end
 
-if astronvim.default_colorscheme then
-  if not pcall(vim.cmd.colorscheme, astronvim.default_colorscheme) then
-    require("astronvim.utils").notify(
-      ("Error setting up colorscheme: `%s`"):format(astronvim.default_colorscheme),
-      vim.log.levels.ERROR
-    )
-  end
-end
-
-require("astronvim.utils").conditional_func(astronvim.user_opts("polish", nil, false), true)
+require "lazy_setup"
+require "polish"
